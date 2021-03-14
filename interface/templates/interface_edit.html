@@ -1,0 +1,649 @@
+{% extends 'base.html' %}
+{% block style%}
+<style>
+    .button-margin{
+        margin-top:10px
+    }
+    .button-margin .layui-btn{
+        margin:7px
+    }
+</style>
+{% endblock %}
+{% block body %}
+<div class="layui-container">
+    <h1 style="margin:10px">创建接口</h1>
+    <form class="layui-form">
+        <div class="layui-row">
+            <div class="layui-col-md8">
+                <div class="layui-row">
+{#                    只有定义了变量的team和project才会被显示出来#}
+                    <div class="layui-col-md3">
+                        <select  id="team" lay-filter="team"></select>
+                    </div>
+                    <div class="layui-col-md3">
+                        <select  id="project" lay-filter="project"></select>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-input-inline" style="width:400px">
+                            <input type="text" id="name" required  lay-verify="required" placeholder="请输入请求的详细描述" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <!--method和url-->
+                <div class="layui-row">
+                    <!--method的下拉框-->
+                    <div class="layui-col-md2">
+                        <select id="method" lay-verify="required">
+
+                            <option value="get">get</option>
+                            <option value="post">post</option>
+                            <option value="put">put</option>
+                            <option value="delete">delete</option>
+
+                        </select>
+                    </div>
+                    <div class="layui-col-md10">
+                        <div class="layui-input-inline" style="width:600px">
+                            <input type="text" id="url" required  lay-verify="required" placeholder="请输入url地址" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                </div>
+                <!--button按钮-->
+                <div class="layui-row button-margin">
+                    <button id="header" type='button' class="layui-btn">header</button>
+                    <button id="params" type='button' class="layui-btn">params</button>
+                    <button id="data" type='button' class="layui-btn">data</button>
+                    <button id="json" type='button' class="layui-btn">json</button>
+                    <button id="assert" type='button' class="layui-btn">assert</button>
+                    <button id="extract" type='button' class="layui-btn">extract</button>
+                    <button id="debug" type='button' class="layui-btn">debug</button>
+                    <button id="update" type='button' class="layui-btn">update</button>
+                </div>
+                <!--隐藏的填写信息的对话框-->
+                <div id="header_section" style="display:none">
+                    <fieldset class="layui-elem-field layui-field-title">
+                        <legend>header</legend>
+                    </fieldset>
+                    <!--多少对key和value 我们不确定 todo 动态添加 写js然后动态拼接html标签-->
+                </div>
+                <div id="params_section" style="display:none">
+                    <fieldset class="layui-elem-field layui-field-title">
+                        <legend>params</legend>
+                    </fieldset>
+                    <!--多少对key和value 我们不确定 todo 动态添加 写js然后动态拼接html标签-->
+                </div>
+                <div id="data_section" style="display:none">
+                    <fieldset class="layui-elem-field layui-field-title">
+                        <legend>data</legend>
+                    </fieldset>
+                    <!--多少对key和value 我们不确定 todo 动态添加 写js然后动态拼接html标签-->
+                </div>
+                <div id="json_section" style="display:none">
+                    <fieldset class="layui-elem-field layui-field-title">
+                        <legend>json</legend>
+                    </fieldset>
+                    <!--多少对key和value 我们不确定 todo 动态添加 写js然后动态拼接html标签-->
+                </div>
+                <div id="assert_section" style="display:none">
+                    <fieldset class="layui-elem-field layui-field-title">
+                        <legend>assert</legend>
+                    </fieldset>
+                    <!--多少对key和value 我们不确定 todo 动态添加 写js然后动态拼接html标签-->
+                </div>
+                <div id="extract_section" style="display:none">
+                    <fieldset class="layui-elem-field layui-field-title">
+                        <legend>extract</legend>
+                    </fieldset>
+                    <!--多少对key和value 我们不确定-->
+                </div>
+
+            </div>
+            <div class="layui-col-md4">
+                <!--展示回调后的响应response的信息-->
+                <div id="result"></div>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<script>
+     //添加函数的名字
+    function add_name(form,data){
+        $('#name').val(data['name'])
+    }
+    //添加url地址
+     function add_url(form,data){
+        $('#url').val(data['url'])
+     }
+    //添加header
+    function add_header(){
+         //提前判断一下data是否有header这个属性 data.hasOwnProperty('header')
+        if (data.hasOwnProperty('header')){
+            for(var key in data['header']){
+                var html ='';
+                //动态拼接html页面
+            html +=  '<div class="layui-row">'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  value="'+key+'" lay-verify="required" placeholder="请输入header的键" autocomplete="off" class="layui-input header_key">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required   value="'+data['header'][key]+'" lay-verify="required" placeholder="请输入header的值" autocomplete="off" class="layui-input header_value">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md2">'+
+                        '<div class="layui-input-inline">'+
+                            '<button type=\'button\' class="layui-btn" onclick="delete_this_div(this)">删除</button>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+
+            $('#header_section').append(html);
+            }
+            $('#header_section').show()
+        }
+
+
+         //以下的代码非常重要，不能删除，否则添加的功能就无法实现
+        $('#header').click(function(){
+            var html = '';
+            //动态拼接html页面
+            html +=  '<div class="layui-row">'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  lay-verify="required" placeholder="请输入header的键" autocomplete="off" class="layui-input header_key">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  lay-verify="required" placeholder="请输入header的值" autocomplete="off" class="layui-input header_value">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md2">'+
+                        '<div class="layui-input-inline">'+
+                            '<button type=\'button\' class="layui-btn" onclick="delete_this_div(this)">删除</button>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+
+            var header_section = $('#header_section');
+                header_section.append(html);
+                header_section.show()
+        })
+    }
+    //添加params
+    function add_params(form,data){
+         if (data.hasOwnProperty('params')) {
+             for (var key in data['params']) {
+                 var html = '';
+                 html += '<div class="layui-row">' +
+                     '<div class="layui-col-md5">' +
+                     '<div class="layui-input-inline">' +
+                     '<input type="text" required  value= "' + key + '" lay-verify="required" placeholder="请输入params的键" autocomplete="off" class="layui-input params_key">' +
+                     '</div>' +
+                     '</div>' +
+                     '<div class="layui-col-md5">' +
+                     '<div class="layui-input-inline">' +
+                     '<input type="text" required  value="' + data['params'][key] + '" lay-verify="required" placeholder="请输入params的值" autocomplete="off" class="layui-input params_value">' +
+                     '</div>' +
+                     '</div>' +
+                     '<div class="layui-col-md2">' +
+                     '<div class="layui-input-inline">' +
+                     '<button type=\'button\' class="layui-btn" onclick="delete_this_div(this)">删除</button>' +
+                     '</div>' +
+                     '</div>' +
+                     '</div>'
+                 $('#params_section').append(html)
+
+             }
+             $('#params_section').show()
+         }
+            //以下的代码非常重要，不能删除，否则添加的功能就无法实现
+          $('#params').click(function(){
+            var html = '';
+            //动态拼接html页面
+            html +=  '<div class="layui-row">'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  lay-verify="required" placeholder="请输入params的键" autocomplete="off" class="layui-input params_key">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  lay-verify="required" placeholder="请输入params的值" autocomplete="off" class="layui-input params_value">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md2">'+
+                        '<div class="layui-input-inline">'+
+                            '<button type=\'button\' class="layui-btn" onclick="delete_this_div(this)">删除</button>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+
+            var params_section = $('#params_section');
+                params_section.append(html);
+                params_section.show()
+        })
+    }
+    //添加data
+    function add_data(){
+          $('#data').click(function(){
+            var html = '';
+            //动态拼接html页面
+            html +=  '<div class="layui-row">'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  lay-verify="required" placeholder="请输入data的键" autocomplete="off" class="layui-input data_key">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  lay-verify="required" placeholder="请输入data的值" autocomplete="off" class="layui-input data_value">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md2">'+
+                        '<div class="layui-input-inline">'+
+                            '<button type=\'button\' class="layui-btn" onclick="delete_this_div(this)">删除</button>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+
+            var data_section = $('#data_section');
+                data_section.append(html);
+                data_section.show()
+        })
+    }
+    //添加json
+    function add_json(){
+          $('#json').click(function(){
+            var html = '';
+            //动态拼接html页面
+            html +=
+                '<div class="layui-row">'+
+                    '<div class="layui-col-md10">'+
+                        '<div class="layui-input-block" style="margin:3px">'+
+                            '<textarea name="desc" placeholder="请输入json数据" class="layui-textarea json_value"></textarea>'+
+                        '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md2">'+
+                        '<div class="layui-input-inline">'+
+                            '<button type=\'button\' class="layui-btn" onclick="delete_this_div(this)">删除</button>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+
+            var json_section = $('#json_section');
+                json_section.append(html);
+                json_section.show()
+        })
+    }
+
+    //定义函数，做判断，来源是body还是code，add_assert需要调用这个函数
+    function render_source(source){
+        var result = ''
+        switch(source){
+            case 'code':
+                result = '<option value="code" selected>状态码</option>'+
+                '<option value="body">请求体</option>'
+                break
+
+            case 'body':
+                result = '<option value="code" >状态码</option>'+
+                '<option value="body" selected>请求体</option>'
+                break
+        }
+        //result 是option的一个拼接
+        return result
+    }
+    //定义函数，做判断，condition的判断eqls,lt,gt
+     function render_condition(condition){
+        var result = '';
+        switch(condition){
+            case 'eqls':
+                result = '<option value="eqls" selected >等于</option>'+
+                '<option value="gt">大于</option>'+
+                '<option value="lt">小于</option>'+
+                '<option value="gte">大于等于</option>'+
+                '<option value="lte">小等于</option>'
+                break
+            case 'gt':
+                 result = '<option value="eqls">等于</option>'+
+                '<option value="gt" selected>大于</option>'+
+                '<option value="lt">小于</option>'+
+                '<option value="gte">大于等于</option>'+
+                '<option value="lte">小等于</option>'
+                break
+        }
+        //result 是option的一个拼接
+        return result
+
+     }
+
+    //添加断言,定义函数，添加form这个形参
+    function add_assert(form,data){
+        if (data.hasOwnProperty('assert')) {
+             for (var i in data['assert']) {
+                 //调用子函数，获取返回值，然后跟select进行拼接
+                 var source =render_source(data['assert'][i]['source']);
+                 var condition = render_condition(data['assert'][i]['condition'])
+                 var html = '';
+                 html += '<div class="layui-row">'+
+                '<div class="layui-col-md2">'+
+                     '<select class="source" lay-verify="required">'+
+                        source+
+                     '</select>'+
+                '</div>'+
+        '<div class="layui-col-md3">'+
+            '<div class="layui-input-inline">'+
+                 '<input type="text" required value="'+data['assert'][i]['expression']+'" lay-verify="required" placeholder="请输入断言表达式" autocomplete="off" class="layui-input assert_key">' +
+                '</div>'+
+        '</div>'+
+        '<div class="layui-col-md2">'+
+             '<select class="condition" lay-verify="required">'+
+               condition+
+             '</select>'+
+            '</div>'+
+                '<div class="layui-col-md3">'+
+                    '<div class="layui-input-inline">'+
+                        '<input type="text" required value="'+data['assert'][i]['expected']+'" lay-verify="required" placeholder="请输入断言的值" autocomplete="off" class="layui-input assert_value">' +
+                            '</div>'+
+                '</div>'+
+                '<div class="layui-col-md2">'+
+                    '<div class="layui-input-inline">'+
+                        '<button type=\'button\' class="layui-btn" onclick="delete_this_div(this)">删除</button>'+
+                    '</div>'+
+                '</div>'+
+                     '</div>'
+                $('#assert_section').append(html);
+             }
+               $('#assert_section').show();
+              form.render()
+        }
+
+
+        ////以下的代码非常重要，不能删除，否则添加的功能就无法实现
+        $('#assert').click(function(){
+            var html = '';
+            //动态拼接html页面
+            html += '<div class="layui-row">'+
+        '<div class="layui-col-md2">'+
+             '<select class="source" lay-verify="required">'+
+                '<option value="code">状态码</option>'+
+                '<option value="body">请求体</option>'+
+             '</select>'+
+        '</div>'+
+        '<div class="layui-col-md3">'+
+            '<div class="layui-input-inline">'+
+                 '<input type="text" required  lay-verify="required" placeholder="请输入断言表达式" autocomplete="off" class="layui-input assert_key">' +
+                '</div>'+
+        '</div>'+
+        '<div class="layui-col-md2">'+
+             '<select class="condition" lay-verify="required">'+
+                '<option value="eqls">等于</option>'+
+                '<option value="gt">大于</option>'+
+                '<option value="lt">小于</option>'+
+                '<option value="gte">大于等于</option>'+
+                '<option value="lte">小等于</option>'+
+             '</select>'+
+        '</div>'+
+                 '<div class="layui-col-md3">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  lay-verify="required" placeholder="请输入断言的值" autocomplete="off" class="layui-input assert_value">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md2">'+
+                        '<div class="layui-input-inline">'+
+                            '<button type=\'button\' class="layui-btn" onclick="delete_this_div(this)">删除</button>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+            $('#assert_section').append(html);
+            $('#assert_section').show();
+            form.render()
+
+        })
+    }
+    //添加extract数据提取
+    function add_extract(){
+          $('#extract').click(function(){
+            var html = '';
+            //动态拼接html页面
+            html +=  '<div class="layui-row">'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  lay-verify="required" placeholder="请输入表达式" autocomplete="off" class="layui-input extract_key">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md5">'+
+                        '<div class="layui-input-inline">'+
+                            '<input type="text" required  lay-verify="required" placeholder="请输入变量名" autocomplete="off" class="layui-input extract_value">' +
+                                '</div>'+
+                    '</div>'+
+                    '<div class="layui-col-md2">'+
+                        '<div class="layui-input-inline">'+
+                            '<button type=\'button\' class="layui-btn" onclick="delete_this_div(this)">删除</button>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'
+
+            var extract_section = $('#extract_section');
+                extract_section.append(html);
+                extract_section.show()
+        })
+    }
+    //定义动态拼接的删除按钮触发的时间函数  obj定义 形参
+    //调用函数传递的this代表的是当前节点
+    function delete_this_div(obj){
+            // console.log($(obj).parent().parent().parent());
+            $(obj).parent().parent().parent()[0].remove()
+    }
+    //前端收集用户在浏览器界面输入的信息比如method，url，请求参数
+    function get_params(){
+        var pathname = window.location.pathname;
+        //console.log(pathname)
+        //切割成列表
+        var tmp = pathname.split('/');
+        //console.log(tmp);
+        var id = tmp[tmp.length-1];
+        //先定义一个数据结构保存收集到的信息
+        var data = {
+            'id':id,
+            'name':$('#name').val(),
+            'team':$('#team').val(),
+            'project':$('#project').val(),
+            'method':$('#method').val(),//获取到请求方法的值
+            'url': $('#url').val(),//获取url地址的值
+            'header':{},
+            'params':{},
+            'data':{},
+            'json':{},
+            'assert':[],
+            'extract':[]
+        };
+        //循环遍历展现出来的key-value的值，然后追加到data变量中 dom.each(function(){})
+        $('.header_key').each(function(index,element){
+            var key = $('.header_key').eq(index).val();
+            var value = $('.header_value').eq(index).val();
+            data['header'][key]=value;
+
+        });
+        $('.params_key').each(function(index,element){
+            var key = $('.params_key').eq(index).val();
+            var value = $('.params_value').eq(index).val();
+            data['params'][key]=value;
+
+
+        });
+        $('.data_key').each(function(index,element){
+            var key = $('.data_key').eq(index).val();
+            var value = $('.data_value').eq(index).val();
+            data['data'][key]=value;
+
+
+        });
+         $('.json_value').each(function(index,element){
+            var value = $('.json_value').eq(index).val();
+            data['json']=value;
+
+
+        });
+         // 断言和数据提取没有获取
+        $('.assert_key').each(function(index,element){
+            var source = $('.source').eq(index).val();
+            var expr = $('.assert_key').eq(index).val();
+            var condition = $('.condition').eq(index).val();
+            var value = $('.assert_value').eq(index).val();
+            //往array里面追加内容，push
+            data['assert'].push({
+                'source':source,
+                'expression':expr,
+                'condition':condition,
+                'expected':value
+            })
+
+        });
+        //数据提取
+         $('.extract_key').each(function(index,element){
+            var expr = $('.extract_key').eq(index).val();
+            var value = $('.extract_value').eq(index).val();
+            //往array里面追加内容，push
+            data['extract'].push({
+                'expression':expr,
+                'expected':value
+            })
+
+        });
+
+        return data
+    }
+    function debug(){
+        var url='/interface/api/v1/debug';
+        var data = get_params();
+        console.log(data);
+        //调用封装好的ajax函数
+        http(url,'post',data,function(data){
+            //成功的回调函数 todo 回调数据展现到id=result这个div里面
+            console.log(data);
+            //清空
+            $('#result').html('');
+            //追加响应信息
+            $('#result').append('<pre><code>'+JSON.stringify(data.data.response.json,null,4)+'</code></pre>')
+        },function(data){
+            //失败的回调函数
+            console.log(data)
+        })
+    }
+    function update(){
+        var url='/interface/api/v1/update';
+        var data = get_params();
+        console.log(data);
+        //调用封装好的ajax函数
+        http(url,'post',data,function(data){
+            //成功的回调函数
+           alert(data.message)
+
+        },function(data){
+            //失败的回调函数
+            console.log(data)
+        })
+    }
+    var menu;
+    //定义函数，前后端交互，从后台获取variable表中的所有team和project
+    function get_menu(form){
+        var url = '/interface/api/v1/team_and_project';
+        http(url,'get',{},function(data){
+            console.log(data);
+            menu=data['data'];
+            var html = '';
+            //for (var v in 变量)  变量是列表,v是索引值；变量是字典，v是键
+            for (var team in menu){
+                console.log(team)
+                html += '<option value="'+team+'">'+team+'</option>'
+            }
+            $('#team').append(html);
+            var team
+            for (var key in menu){
+                //记录menu里面的第一个team
+                team = key;
+                break
+            }
+            //拼接project
+            var html = '';
+            for (var i in menu[team]){
+                html += '<option value="'+menu[team][i]+'">'+menu[team][i]+'</option>'
+            }
+            $('#project').append(html);
+            //只有加这句才能渲染出form表单的页面
+            form.render();
+
+        },function(data){
+            console.log(data)
+        })
+    }
+    //获取接口的数据，然后拿到数据之后进行渲染页面
+    function get_interface_detail(form){
+        //http://127.0.0.1:5000/interface/edit/20210124133148746df5789832  把id提取出来
+        var pathname = window.location.pathname;
+        //console.log(pathname)
+        //切割成列表
+        var tmp = pathname.split('/');
+        //console.log(tmp);
+        var id = tmp[tmp.length-1];
+        //console.log(id)
+        var data = {'id':id};
+        var url = '/interface/api/v2/search'
+        http(url,'get',data,function(data){
+            //成功的回调函数，渲染页面
+            console.log(data);
+            add_name(form,data['data'][0]);
+            add_url(form,data['data'][0]);
+            add_header(form,data['data'][0]);
+            add_params(form,data['data'][0]);
+            //add_data(form,data['data'][0]);
+            //add_json(form,data['data'][0]);
+            add_assert(form,data['data'][0]);
+        },function(data){
+            console.log(data)
+        })
+    }
+
+    layui.use('form', function(){
+     var form = layui.form;
+    //点击header触发的事件
+        //add_header();
+        //add_params();
+        //add_data();
+        //add_json();
+        add_extract();
+        //add_assert(form);//调用函数，传递实参form，form = layui.form;
+
+        $('#debug').click(debug);
+        $('#update').click(update);
+        //调用函数
+        get_menu(form);
+        //team联动project，拿到team的值，去数据库里面查询project的值
+        //监听form表单事件
+        form.on('select(team)',function() {
+            var team = $('#team').val();
+            //项目的内容置空，然后拼接
+            $('#project').empty();
+            var project_list = menu[team];
+            //todo 动态拼接option标签，然后追加到select标签里面
+            var html = '';
+            for (var index in project_list) {
+                html += '<option value="' + project_list[index] + '">' + project_list[index] + '</option>>'
+            }
+            $('#project').append(html);
+            //form进行渲染
+            form.render()
+        });
+        //调用获取接口详细信息的函数
+        get_interface_detail(form)
+
+});
+
+</script>
+{% endblock %}

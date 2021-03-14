@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <table id="variable" lay-filter="test"></table>
+    <script type="text/html" id="tool">
+      <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="trigger">运行</a>
+      <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+
+    <script>
+
+
+
+        layui.use(['table','layer'],function(){
+            var table = layui.table
+                ,layer = layui.layer
+
+              //渲染table，动态获取数据
+              var tableIns = table.render({
+                elem: '#variable'   //指定table表格(推荐id选择器)
+                ,height: 420
+                ,url: '/interface/api/v1/suite/list' //数据接口
+                ,title: '接口套件'
+                ,page: true //开启分页
+                ,cols: [[ //表头
+                  {type: 'checkbox', fixed: 'left'}
+                  ,{field: '_id', title: 'ID', width:280, fixed: 'left'}
+                  ,{field: 'team', title: '团队', width:200}
+                  ,{field: 'project', title: '项目', width:200}
+                  ,{field: 'cases', title: '用例', width: 550}
+                  ,{fixed: 'right', width: 165, align:'center', toolbar: '#tool'}
+                ]]
+                  ,parseData: function(res){ //res 即为原始返回的数据
+                    return {
+                      "code": res.status, //解析接口状态
+                      "msg": res.message, //解析提示文本
+                      "count": res.data.length, //解析数据长度
+                      "data": res.data //解析数据列表
+                    };
+                  }
+
+              });
+
+
+              //监听行工具事件
+              table.on('tool(test)', function(obj){ //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+                var data = obj.data //获得当前行数据
+                ,layEvent = obj.event; //获得 lay-event 对应的值
+                  console.log(data);
+                if(layEvent === 'del'){
+                  if(data.length === 0){
+                      layer.msg('请选择一行');
+                    } else if(data.length > 1){
+                      layer.msg('只能同时删除一个');
+                    } else {
+                        layer.open({
+                         title:'删除变量',
+                         content:'请谨慎删除，删除不可逆',
+                         //点击btn的触发事件
+                         yes:function(index){
+                             //收集添加的参数名和参数值
+                             var url = '/interface/api/v1/suite/delete';
+                             var data_content = {
+                                    'id':data['_id'],//表里面对应的_id
+
+                             };
+
+                             //调用封装好的ajax请求
+                             http(url,'post',data_content,function(data){
+                                 layer.msg(data.message);
+                                //创建成功，多了条数据，需要重新渲染
+                                tableIns.reload({
+                                    url:'/interface/api/v1/suite/list',
+
+                                })
+                             },function(data){
+                                 layer.msg('删除失败，请联系管理员')
+                             });
+                             //关闭layer层
+                             layer.close(index)
+                         }
+                     })
+                  }
+                  //运行功能的实现
+                } else if(layEvent === 'trigger'){
+                  if(data.length === 0){
+                      layer.msg('请选择一行');
+                    } else if(data.length > 1){
+                      layer.msg('只能同时编辑一个');
+                    } else {
+                        var url = '/interface/api/v1/trigger';
+                        var content_data = {
+                            'id':data['_id']
+                        };
+                        //前后端交互
+                      http(url,'get',content_data,function(data){
+                          layer.msg(data['data'])
+                      },function(data){
+                          console.log(data)
+                      })
+                  }
+                }
+              });
+
+
+
+        })
+
+
+    </script>
+
+
+
+{% endblock %}

@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% block script %}
+    <script src="/variable/static/variable.js"></script>
+{% endblock %}
+
+{% block body %}
+
+    <div id="variable_dialog" style="display:none">
+        <form action="" class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">团队</label>
+                <div class="layui-input-inline">
+                    <select id="team" lay-filter="team">
+
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">项目</label>
+                <div class="layui-input-inline">
+                    <select id="project">
+
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">变量名</label>
+                <div class="layui-input-inline" >
+                    <input type="text" id="name" required  lay-verify="required" placeholder="请输入变量名" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">变量值</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="value" required  lay-verify="required" placeholder="请输入变量值" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+
+        </form>
+    </div>
+    <table id="variable" lay-filter="test"></table>
+    <script type="text/html" id="tool">
+      <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+      <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+
+    <script>
+        layui.use(['table','form','layer'],function(){
+            var table = layui.table
+                ,form = layui.form
+                ,layer = layui.layer;
+
+            //team联动project，拿到team的值，去数据库里面查询project的值
+            //监听form表单事件
+            form.on('select(team)',function(){
+                var url = '/variable/api/v1/search';
+                var data = {
+                    'type':'team',
+                    'team':$('#team').val()
+                };
+                http(url,'get',data,function(data){
+                    console.log(data)
+                    //项目的内容置空，然后拼接
+                    $('#project').empty();
+                    //todo 动态拼接option标签，然后追加到select标签里面
+                    var html = '';
+                    for(index in data['data']){
+                        html += '<option value="'+data['data'][index]['project']+'">'+data['data'][index]['project']+'</option>>'
+                    }
+                    $('#project').append(html);
+                    //form进行渲染
+                    form.render()
+
+                },function(data){
+                    console.log(data)
+                })
+            });
+
+
+              //渲染table，动态获取数据
+              var tableIns = table.render({
+                elem: '#variable'   //指定table表格(推荐id选择器)
+                ,height: 420
+                ,url: '/variable/api/v1/search' //数据接口
+                  ,where: {type:'variable',page:0,limit:20} //查询数据接口携带的参数
+                ,title: '变量管理'
+                ,page: true //开启分页
+                ,toolbar: 'default' //开启工具栏，此处显示默认图标，可以自定义模板，详见文档
+                ,cols: [[ //表头
+                  {type: 'checkbox', fixed: 'left'}
+                  ,{field: '_id', title: 'ID', width:280, fixed: 'left'}
+                  ,{field: 'team', title: '团队', width:200}
+                  ,{field: 'project', title: '项目', width: 200}
+                  ,{field: 'name', title: '变量名', width:200}
+                  ,{field: 'value', title: '变量值', width: 200}
+                  ,{fixed: 'right', width: 165, align:'center', toolbar: '#tool'}
+                ]]
+                  ,parseData: function(res){ //res 即为原始返回的数据
+                    return {
+                      "code": res.status, //解析接口状态
+                      "msg": res.message, //解析提示文本
+                      "count": res.data.length, //解析数据长度
+                      "data": res.data //解析数据列表
+                    };
+                  }
+              });
+
+              //监听头工具栏事件
+              table.on('toolbar(test)', function(obj){
+                var checkStatus = table.checkStatus(obj.config.id)
+                ,data = checkStatus.data; //获取选中的数据
+                  console.log(data);
+                switch(obj.event){
+                  case 'add':
+                    layer.open({
+                        type:1,
+                        skin:'layui-layer-lan',
+                        content:$('#variable_dialog'),
+                        btn:'创建参数',
+                        //点击btn触发的事件
+                        yes:function(index,layero){
+                            var url = '/variable/api/v1/create';
+                            //收集信息
+                            var data = {
+                                'type':'variable',
+                                'team':$('#team').val(),
+                                'project':$('#project').val(),
+                                'name':$('#name').val(),
+                                'value':$('#value').val()
+                            };
+                            http(url,'post',data,function(data){
+                                layer.msg(data.message);
+                                //创建成功，多了条数据，需要重新渲染
+                                tableIns.reload({
+                                    url:'/variable/api/v1/search',
+                                    where: {type:'variable',page:0,limit:20}
+
+                                })
+                            },function(data){
+                                layer.msg('新增失败，请联系管理员')
+                            });
+                             layer.close(index)
+                        }
+                    });
+                  break;
+                  case 'update':
+                    if(data.length === 0){
+                      layer.msg('请选择一行');
+                    } else if(data.length > 1){
+                      layer.msg('只能同时编辑一个');
+                    } else {
+
+                        //1,进行原来信息的提示
+                        $('#team').val(data[0]['team']);
+                        $('#project').val(data[0]['project']);
+                        $('#name').val(data[0]['name']);
+                        $('#value').val(data[0]['value']);
+                        //$('#team').val()
+                      layer.open({
+                        type:1,
+                        skin:'layui-layer-lan',
+                        content:$('#variable_dialog'),
+                        btn:'更新参数',
+                        //点击btn触发的事件
+                        yes:function(index,layero){
+                            var url = '/variable/api/v1/update';
+                            //收集信息
+                            var data_content = {
+                                '_id':data[0]['_id'],
+                                'type':'variable',
+                                'team':$('#team').val(),
+                                'project':$('#project').val(),
+                                'name':$('#name').val(),
+                                'value':$('#value').val()
+                            };
+                            http(url,'post',data_content,function(data){
+                                layer.msg(data.message);
+                                //创建成功，多了条数据，需要重新渲染
+                                tableIns.reload({
+                                    url:'/variable/api/v1/search',
+                                    where: {type:'variable',page:0,limit:20}
+
+                                })
+                            },function(data){
+                                layer.msg('修改失败，请联系管理员')
+                            });
+                             //layer.close(index)
+                            layer.closeAll()
+
+                        }
+                    });
+                    }
+                  break;
+                  case 'delete':
+                    if(data.length === 0){
+                      layer.msg('请选择一行');
+                    } else {
+                     layer.open({
+                         title:'删除变量',
+                         content:'请谨慎删除，删除不可逆',
+                         //点击btn的触发事件
+                         yes:function(index){
+                             //收集添加的参数名和参数值
+                              var url = '/variable/api/v1/delete';
+                             var data_content = {
+                                    'id_list':[],//表里面对应的_id
+                                    'type':'variable'//表名
+                             };
+                             //循环遍历data数据，然后把_id追加到id_list里面
+                             for(index in data){
+                                 data_content['id_list'].push(data[index]['_id'])
+                             }
+                             //调用封装好的ajax请求
+                             http(url,'post',data_content,function(data){
+                                 layer.msg(data.message);
+                                //创建成功，多了条数据，需要重新渲染
+                                tableIns.reload({
+                                    url:'/variable/api/v1/search',
+                                    where: {type:'variable',page:0,limit:20}
+
+                                })
+                             },function(data){
+                                 layer.msg('删除失败，请联系管理员')
+                             });
+                             //关闭layer层
+                             layer.close(index)
+                         }
+                     })
+                    }
+                  break;
+                };
+              });
+
+              //监听行工具事件
+              table.on('tool(test)', function(obj){ //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+                var data = obj.data //获得当前行数据
+                ,layEvent = obj.event; //获得 lay-event 对应的值
+                  console.log(data);
+                if(layEvent === 'del'){
+                  if(data.length === 0){
+                      layer.msg('请选择一行');
+                    } else if(data.length > 1){
+                      layer.msg('只能同时删除一个');
+                    } else {
+                        layer.open({
+                         title:'删除变量',
+                         content:'请谨慎删除，删除不可逆',
+                         //点击btn的触发事件
+                         yes:function(index){
+                             //收集添加的参数名和参数值
+                             var url = '/variable/api/v1/delete';
+                             var data_content = {
+                                    'id_list':[data['_id']],//表里面对应的_id
+                                    'type':'variable'//表名
+                             };
+
+                             //调用封装好的ajax请求
+                             http(url,'post',data_content,function(data){
+                                 layer.msg(data.message);
+                                //创建成功，多了条数据，需要重新渲染
+                                tableIns.reload({
+                                    url:'/variable/api/v1/search',
+                                    where: {type:'variable',page:0,limit:20}
+
+                                })
+                             },function(data){
+                                 layer.msg('删除失败，请联系管理员')
+                             });
+                             //关闭layer层
+                             layer.close(index)
+                         }
+                     })
+                  }
+                } else if(layEvent === 'edit'){
+                  layer.confirm('真的删除行么', function(index){
+                    obj.del(); //删除对应行（tr）的DOM结构
+                    layer.close(index);
+                    //向服务端发送删除指令
+                  });
+                }
+              });
+
+
+        })
+
+
+    </script>
+
+
+
+{% endblock %}

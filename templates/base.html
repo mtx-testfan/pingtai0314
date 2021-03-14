@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="https://www.layuicdn.com/layui/css/layui.css">
+    {% block style%}
+    {% endblock %}
+    <script src="/static/jquery-1.12.4.min.js"></script>
+    <script src="https://www.layuicdn.com/layui/layui.js"></script>
+    <script src="/static/common.js"></script>
+
+    {% block script %}
+    {% endblock %}
+</head>
+<body>
+<!--不变的直接写死，变化的留白，继承的思想-->
+<!--包含头部信息-->
+{% include "header.html" %}
+{% block body %}
+{% endblock %}
+</body>
+</html>
